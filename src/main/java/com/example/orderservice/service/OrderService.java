@@ -4,7 +4,9 @@ import com.example.orderservice.model.Order;
 import com.example.orderservice.model.OrderStatus;
 import com.example.orderservice.repository.OrderRepository;
 import com.example.orderservice.model.OrderCreatedEvent;
-import org.springframework.context.ApplicationEventPublisher;
+import com.example.orderservice.model.OutboxEvent;
+import com.example.orderservice.repository.OutboxEventRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,7 +18,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OrderService {
     private final OrderRepository orderRepository;
-    private final ApplicationEventPublisher eventPublisher;
+    private final OutboxEventRepository outboxEventRepository;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public Order createOrder(CreateOrderRequest request) {
@@ -26,14 +29,28 @@ public class OrderService {
                 .status(OrderStatus.PENDING)
                 .build();
         Order savedOrder = orderRepository.save(order);
-        // Publish event after persistence (will be handled after commit)
+
+        // Create OrderCreatedEvent and save to outbox
         OrderCreatedEvent event = OrderCreatedEvent.builder()
             .orderId(savedOrder.getId())
             .customerId(savedOrder.getCustomerId())
             .totalAmount(savedOrder.getTotalAmount())
             .timestamp(java.time.Instant.now())
             .build();
-        eventPublisher.publishEvent(event);
+        try {
+            String payload = objectMapper.writeValueAsString(event);
+            OutboxEvent outboxEvent = OutboxEvent.builder()
+                .aggregateType("Order")
+                .aggregateId(savedOrder.getId())
+                .type("OrderCreatedEvent")
+                .payload(payload)
+                .createdAt(java.time.Instant.now())
+                .published(false)
+                .build();
+            outboxEventRepository.save(outboxEvent);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to serialize OrderCreatedEvent for outbox", e);
+        }
         return savedOrder;
     }
 
