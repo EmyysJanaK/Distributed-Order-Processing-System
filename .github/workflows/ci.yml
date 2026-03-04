@@ -1,0 +1,336 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository_owner }}
+
+jobs:
+  # ============================================================
+  # Detect which modules changed
+  # ============================================================
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      common-events: ${{ steps.filter.outputs.common-events }}
+      order-service: ${{ steps.filter.outputs.order-service }}
+      payment-service: ${{ steps.filter.outputs.payment-service }}
+      inventory-service: ${{ steps.filter.outputs.inventory-service }}
+      notification-service: ${{ steps.filter.outputs.notification-service }}
+      api-gateway: ${{ steps.filter.outputs.api-gateway }}
+      service-registry: ${{ steps.filter.outputs.service-registry }}
+      root-pom: ${{ steps.filter.outputs.root-pom }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            common-events:
+              - 'common-events/**'
+            order-service:
+              - 'order-service/**'
+              - 'common-events/**'
+            payment-service:
+              - 'payment-service/**'
+              - 'common-events/**'
+            inventory-service:
+              - 'inventory-service/**'
+              - 'common-events/**'
+            notification-service:
+              - 'notification-service/**'
+              - 'common-events/**'
+            api-gateway:
+              - 'api-gateway/**'
+            service-registry:
+              - 'service-registry/**'
+            root-pom:
+              - 'pom.xml'
+
+  # ============================================================
+  # Build & Test: order-service
+  # ============================================================
+  build-order-service:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.order-service == 'true' || needs.detect-changes.outputs.root-pom == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build & Test order-service
+        run: mvn -pl order-service -am clean verify -B --no-transfer-progress
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: order-service-test-results
+          path: order-service/target/surefire-reports/
+
+      - name: Log in to GHCR
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Docker image
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: order-service/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository }}/order-service:latest
+            ${{ env.REGISTRY }}/${{ github.repository }}/order-service:${{ github.sha }}
+
+  # ============================================================
+  # Build & Test: payment-service
+  # ============================================================
+  build-payment-service:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.payment-service == 'true' || needs.detect-changes.outputs.root-pom == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build & Test payment-service
+        run: mvn -pl payment-service -am clean verify -B --no-transfer-progress
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: payment-service-test-results
+          path: payment-service/target/surefire-reports/
+
+      - name: Log in to GHCR
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Docker image
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: payment-service/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository }}/payment-service:latest
+            ${{ env.REGISTRY }}/${{ github.repository }}/payment-service:${{ github.sha }}
+
+  # ============================================================
+  # Build & Test: inventory-service
+  # ============================================================
+  build-inventory-service:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.inventory-service == 'true' || needs.detect-changes.outputs.root-pom == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build & Test inventory-service
+        run: mvn -pl inventory-service -am clean verify -B --no-transfer-progress
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: inventory-service-test-results
+          path: inventory-service/target/surefire-reports/
+
+      - name: Log in to GHCR
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Docker image
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: inventory-service/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository }}/inventory-service:latest
+            ${{ env.REGISTRY }}/${{ github.repository }}/inventory-service:${{ github.sha }}
+
+  # ============================================================
+  # Build & Test: notification-service
+  # ============================================================
+  build-notification-service:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.notification-service == 'true' || needs.detect-changes.outputs.root-pom == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build & Test notification-service
+        run: mvn -pl notification-service -am clean verify -B --no-transfer-progress
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: notification-service-test-results
+          path: notification-service/target/surefire-reports/
+
+      - name: Log in to GHCR
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Docker image
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: notification-service/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository }}/notification-service:latest
+            ${{ env.REGISTRY }}/${{ github.repository }}/notification-service:${{ github.sha }}
+
+  # ============================================================
+  # Build & Test: api-gateway
+  # ============================================================
+  build-api-gateway:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.api-gateway == 'true' || needs.detect-changes.outputs.root-pom == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build & Test api-gateway
+        run: mvn -pl api-gateway -am clean verify -B --no-transfer-progress
+
+      - name: Log in to GHCR
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Docker image
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: api-gateway/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository }}/api-gateway:latest
+            ${{ env.REGISTRY }}/${{ github.repository }}/api-gateway:${{ github.sha }}
+
+  # ============================================================
+  # Build & Test: service-registry
+  # ============================================================
+  build-service-registry:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.service-registry == 'true' || needs.detect-changes.outputs.root-pom == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build & Test service-registry
+        run: mvn -pl service-registry -am clean verify -B --no-transfer-progress
+
+      - name: Log in to GHCR
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Docker image
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: service-registry/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ github.repository }}/service-registry:latest
+            ${{ env.REGISTRY }}/${{ github.repository }}/service-registry:${{ github.sha }}
+
+  # ============================================================
+  # Full monorepo build (triggered when root pom changes)
+  # ============================================================
+  build-all:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.root-pom == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build entire monorepo
+        run: mvn clean verify -B --no-transfer-progress
+

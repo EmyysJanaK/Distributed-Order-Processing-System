@@ -1,0 +1,66 @@
+# ===========================
+# Maven
+# ===========================
+**/target/
+**/.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+
+# ===========================
+# IDE - IntelliJ IDEA
+# ===========================
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# ===========================
+# IDE - VS Code
+# ===========================
+.vscode/
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# ===========================
+# IDE - Eclipse
+# ===========================
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# ===========================
+# OS
+# ===========================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ===========================
+# Docker
+# ===========================
+.dockerignore
+
+# ===========================
+# Environment / Secrets
+# ===========================
+.env
+*.env
+!.env.example
+
+# ===========================
+# Logs
+# ===========================
+**/logs/
+*.log
+
