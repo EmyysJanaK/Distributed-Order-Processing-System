@@ -8,7 +8,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: ${{ github.repository_owner }}
 
 jobs:
   # ============================================================
@@ -79,6 +78,11 @@ jobs:
           name: order-service-test-results
           path: order-service/target/surefire-reports/
 
+      # Convert repo name to lowercase — Docker tags must be all-lowercase
+      - name: Lowercase repository name
+        id: repo
+        run: echo "name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
       - name: Log in to GHCR
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: docker/login-action@v3
@@ -95,8 +99,8 @@ jobs:
           file: order-service/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}/order-service:latest
-            ${{ env.REGISTRY }}/${{ github.repository }}/order-service:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}/order-service:latest
+            ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}/order-service:${{ github.sha }}
 
   # ============================================================
   # Build & Test: payment-service
@@ -125,6 +129,10 @@ jobs:
           name: payment-service-test-results
           path: payment-service/target/surefire-reports/
 
+      - name: Lowercase repository name
+        id: repo
+        run: echo "name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
       - name: Log in to GHCR
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: docker/login-action@v3
@@ -141,8 +149,8 @@ jobs:
           file: payment-service/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}/payment-service:latest
-            ${{ env.REGISTRY }}/${{ github.repository }}/payment-service:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}/payment-service:latest
+            ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}/payment-service:${{ github.sha }}
 
   # ============================================================
   # Build & Test: inventory-service
@@ -171,6 +179,10 @@ jobs:
           name: inventory-service-test-results
           path: inventory-service/target/surefire-reports/
 
+      - name: Lowercase repository name
+        id: repo
+        run: echo "name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
       - name: Log in to GHCR
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: docker/login-action@v3
@@ -187,8 +199,8 @@ jobs:
           file: inventory-service/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}/inventory-service:latest
-            ${{ env.REGISTRY }}/${{ github.repository }}/inventory-service:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}/inventory-service:latest
+            ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}/inventory-service:${{ github.sha }}
 
   # ============================================================
   # Build & Test: notification-service
@@ -217,6 +229,10 @@ jobs:
           name: notification-service-test-results
           path: notification-service/target/surefire-reports/
 
+      - name: Lowercase repository name
+        id: repo
+        run: echo "name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
       - name: Log in to GHCR
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: docker/login-action@v3
@@ -233,8 +249,8 @@ jobs:
           file: notification-service/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}/notification-service:latest
-            ${{ env.REGISTRY }}/${{ github.repository }}/notification-service:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}/notification-service:latest
+            ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}/notification-service:${{ github.sha }}
 
   # ============================================================
   # Build & Test: api-gateway
@@ -256,6 +272,10 @@ jobs:
       - name: Build & Test api-gateway
         run: mvn -pl api-gateway -am clean verify -B --no-transfer-progress
 
+      - name: Lowercase repository name
+        id: repo
+        run: echo "name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
       - name: Log in to GHCR
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: docker/login-action@v3
@@ -272,8 +292,8 @@ jobs:
           file: api-gateway/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}/api-gateway:latest
-            ${{ env.REGISTRY }}/${{ github.repository }}/api-gateway:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}/api-gateway:latest
+            ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}/api-gateway:${{ github.sha }}
 
   # ============================================================
   # Build & Test: service-registry
@@ -295,6 +315,10 @@ jobs:
       - name: Build & Test service-registry
         run: mvn -pl service-registry -am clean verify -B --no-transfer-progress
 
+      - name: Lowercase repository name
+        id: repo
+        run: echo "name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
       - name: Log in to GHCR
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: docker/login-action@v3
@@ -311,8 +335,8 @@ jobs:
           file: service-registry/Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ github.repository }}/service-registry:latest
-            ${{ env.REGISTRY }}/${{ github.repository }}/service-registry:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}/service-registry:latest
+            ${{ env.REGISTRY }}/${{ steps.repo.outputs.name }}/service-registry:${{ github.sha }}
 
   # ============================================================
   # Full monorepo build (triggered when root pom changes)
