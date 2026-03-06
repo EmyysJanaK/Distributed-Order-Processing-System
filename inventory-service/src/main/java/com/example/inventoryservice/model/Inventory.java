@@ -19,10 +19,10 @@ public class Inventory {
     private UUID id;
 
     @Column(nullable = false, unique = true)
-    private String Sku;
+    private String sku;
 
     @Column(nullable = false)
-    private String Name;
+    private String name;
 
     @Column(length = 500)
     private String description;

@@ -8,7 +8,8 @@ public record InventoryResponse(
     String sku,
     String name,
     String description,
+    BigDecimal unitPrice,
     Integer availableQuantity,
-    BigDecimal unitPrice
+    Integer quantityReserved
 
 ){}

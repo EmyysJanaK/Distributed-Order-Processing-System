@@ -1,7 +1,9 @@
 package com.example.inventoryservice.service;
 
 import com.example.commonevents.OrderCreatedEvent;
+import com.example.inventoryservice.dto.CreateInventoryRequest;
 import com.example.inventoryservice.dto.InventoryResponse;
+import com.example.inventoryservice.dto.UpdateInventoryRequest;
 import com.example.inventoryservice.model.Inventory;
 import com.example.inventoryservice.repository.InventoryRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,12 +17,11 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j //for logging
+@Slf4j
 public class InventoryService {
 
     private final InventoryRepository inventoryRepository;
 
-    //READ OPERATIONS
     public List<InventoryResponse> getAllInventory() {
         return inventoryRepository.findAll().stream()
                 .map(this::mapToResponse)
@@ -35,46 +36,54 @@ public class InventoryService {
 
 
     @Transactional
-    public InventoryResponse createInventory(Inventory request) {
-        // Saves the new inventory entity to the database and maps it to the response DTO
-        Inventory savedInventory = inventoryRepository.save(request);
+    public InventoryResponse createInventory(CreateInventoryRequest request) {
+        Inventory inventory = Inventory.builder()
+                .sku(request.sku())
+                .name(request.name())
+                .description(request.description())
+                .unitPrice(request.unitPrice())
+                .availableQuantity(request.initialQuantity())
+                .quantityReserved(0) // Explicitly starts at 0
+                .build();
+
+        Inventory savedInventory = inventoryRepository.save(inventory);
         return mapToResponse(savedInventory);
     }
 
     @Transactional
-    public InventoryResponse updateInventory(UUID id, Inventory updatedData) {
-        // 1. Find the existing record
+    public InventoryResponse updateInventory(UUID id, UpdateInventoryRequest request) {
         Inventory existingInventory = inventoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Inventory item not found with ID: " + id));
 
-        // 2. Update the fields safely (Do not overwrite the ID)
-        existingInventory.setId(updatedData.getId());
-        existingInventory.setName(updatedData.getName());
-        existingInventory.setAvailableQuantity(updatedData.getAvailableQuantity());
-        existingInventory.setQuantityReserved(updatedData.getQuantityReserved());
+        existingInventory.setSku(request.sku());
+        existingInventory.setName(request.name());
+        existingInventory.setDescription(request.description());
+        existingInventory.setUnitPrice(request.unitPrice());
+        existingInventory.setAvailableQuantity(request.availableQuantity());
+        // We purposely DO NOT update quantityReserved here so active orders aren't corrupted
 
-        // 3. Save and return
         Inventory savedInventory = inventoryRepository.save(existingInventory);
         return mapToResponse(savedInventory);
     }
 
+    // ==========================================
+    // 3. EVENT-DRIVEN OPERATIONS
+    // ==========================================
+
     @Transactional
     public void reserveStock(OrderCreatedEvent event) {
-        log.info("Reserving stock for orderId={} customerId={}",
-                event.getOrderId(), event.getCustomerId());
+        log.info("Reserving stock for orderId={} customerId={}", event.getOrderId(), event.getCustomerId());
 
         for (com.example.commonevents.OrderItem item : event.getItems()) {
             Inventory inventory = inventoryRepository.findById(item.productId())
                     .orElseThrow(() -> new RuntimeException("Product not found: " + item.productId()));
 
-            // Corrected to getQuantityAvailable()
             if (inventory.getAvailableQuantity() < item.quantity()) {
                 log.error("Insufficient stock for product: {}", inventory.getName());
                 throw new RuntimeException("Out of stock for product: " + inventory.getName());
             }
 
-            // Corrected to align with your entity's available/reserved logic
-            inventory.setAvailableQuantity(inventory.getAvailableQuantity()- item.quantity());
+            inventory.setAvailableQuantity(inventory.getAvailableQuantity() - item.quantity());
             inventory.setQuantityReserved(inventory.getQuantityReserved() + item.quantity());
 
             inventoryRepository.save(inventory);
@@ -91,12 +100,12 @@ public class InventoryService {
         Inventory inventory = inventoryRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found: " + productId));
 
-        // Move stock from reserved back to available
         inventory.setQuantityReserved(inventory.getQuantityReserved() - quantityToRelease);
         inventory.setAvailableQuantity(inventory.getAvailableQuantity() + quantityToRelease);
 
         inventoryRepository.save(inventory);
     }
+
 
     private InventoryResponse mapToResponse(Inventory inventory) {
         return new InventoryResponse(
@@ -104,9 +113,9 @@ public class InventoryService {
                 inventory.getSku(),
                 inventory.getName(),
                 inventory.getDescription(),
+                inventory.getUnitPrice(),
                 inventory.getAvailableQuantity(),
-                inventory.getUnitPrice()
+                inventory.getQuantityReserved()
         );
     }
-
 }

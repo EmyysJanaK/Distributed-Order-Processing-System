@@ -1,10 +1,11 @@
 package com.example.inventoryservice.controller;
 
+import com.example.inventoryservice.dto.CreateInventoryRequest; // Import the DTO
+import com.example.inventoryservice.dto.UpdateInventoryRequest; // Import the DTO
 import com.example.inventoryservice.dto.InventoryResponse;
-// import com.example.inventoryservice.dto.CreateInventoryRequest; // Uncomment if you created this DTO
-import com.example.inventoryservice.model.Inventory;
 import com.example.inventoryservice.service.InventoryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,16 +29,18 @@ public class InventoryController {
         return ResponseEntity.ok(inventoryService.getById(id));
     }
 
-    // used a CreateInventoryRequest DTO here instead of the Inventory entity
+    // Now correctly using the DTO and returning a 201 CREATED status
     @PostMapping
-    public ResponseEntity<InventoryResponse> createInventory(@RequestBody Inventory inventoryRequest) {
-        return ResponseEntity.ok(inventoryService.createInventory(inventoryRequest));
+    public ResponseEntity<InventoryResponse> createInventory(@RequestBody CreateInventoryRequest request) {
+        InventoryResponse createdInventory = inventoryService.createInventory(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdInventory);
     }
 
+    // Now correctly using the DTO for updates
     @PutMapping("/{id}")
     public ResponseEntity<InventoryResponse> updateInventory(
             @PathVariable UUID id,
-            @RequestBody Inventory updatedInventory) {
-        return ResponseEntity.ok(inventoryService.updateInventory(id, updatedInventory));
+            @RequestBody UpdateInventoryRequest request) {
+        return ResponseEntity.ok(inventoryService.updateInventory(id, request));
     }
 }
