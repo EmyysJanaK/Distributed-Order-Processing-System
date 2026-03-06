@@ -32,5 +32,16 @@ public class InventoryController {
     public Inventory createInventory(@RequestBody Inventory inventory) {
         return inventoryRepository.save(inventory);
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Inventory> updateInventory(@PathVariable UUID id, @RequestBody Inventory updatedInventory) {
+        return inventoryRepository.findById(id)
+                .map(existingInventory -> {
+                    updatedInventory.setId(id);
+                    Inventory savedInventory = inventoryRepository.save(updatedInventory);
+                    return ResponseEntity.ok(savedInventory);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
 }
 
