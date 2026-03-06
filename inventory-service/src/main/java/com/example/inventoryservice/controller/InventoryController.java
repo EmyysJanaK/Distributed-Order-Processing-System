@@ -28,7 +28,7 @@ public class InventoryController {
         return ResponseEntity.ok(inventoryService.getById(id));
     }
 
-    // Best practice is to use a CreateInventoryRequest DTO here instead of the Inventory entity
+    // used a CreateInventoryRequest DTO here instead of the Inventory entity
     @PostMapping
     public ResponseEntity<InventoryResponse> createInventory(@RequestBody Inventory inventoryRequest) {
         return ResponseEntity.ok(inventoryService.createInventory(inventoryRequest));
