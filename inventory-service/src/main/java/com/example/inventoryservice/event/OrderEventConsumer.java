@@ -18,11 +18,11 @@ public class OrderEventConsumer {
 
     private final InventoryService inventoryService;
 
-    @KafkaListener(
-            topics = "order.created",
-            groupId = "${spring.kafka.consumer.group-id}",
-            containerFactory = "kafkaListenerContainerFactory"
-    )
+//    @KafkaListener(
+//            topics = "order.created",
+//            groupId = "${spring.kafka.consumer.group-id}",
+//            containerFactory = "kafkaListenerContainerFactory"
+//    )
     public void consumeOrderCreatedEvent(
             @Payload OrderCreatedEvent event,
             @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
