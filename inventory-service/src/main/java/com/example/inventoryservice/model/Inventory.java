@@ -19,10 +19,10 @@ public class Inventory {
     private UUID id;
 
     @Column(nullable = false, unique = true)
-    private String productCode;
+    private String Sku;
 
     @Column(nullable = false)
-    private String productName;
+    private String Name;
 
     @Column(length = 500)
     private String description;
@@ -32,7 +32,7 @@ public class Inventory {
 
     @Builder.Default // Prevents nulls when building a new object
     @Column(nullable = false)
-    private Integer quantityAvailable = 0;
+    private Integer availableQuantity = 0;
 
     @Builder.Default
     @Column(nullable = false)
