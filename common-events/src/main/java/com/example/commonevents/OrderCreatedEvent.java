@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -29,5 +30,7 @@ public class OrderCreatedEvent implements Serializable {
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Instant timestamp;
+
+    private List<OrderItem> items;
 }
 

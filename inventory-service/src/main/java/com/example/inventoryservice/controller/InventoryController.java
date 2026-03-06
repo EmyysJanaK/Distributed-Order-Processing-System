@@ -1,7 +1,9 @@
 package com.example.inventoryservice.controller;
 
+import com.example.inventoryservice.dto.InventoryResponse;
+// import com.example.inventoryservice.dto.CreateInventoryRequest; // Uncomment if you created this DTO
 import com.example.inventoryservice.model.Inventory;
-import com.example.inventoryservice.repository.InventoryRepository;
+import com.example.inventoryservice.service.InventoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,38 +12,32 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/inventory")
+@RequestMapping("api/v1/inventory")
 @RequiredArgsConstructor
 public class InventoryController {
 
-    private final InventoryRepository inventoryRepository;
+    private final InventoryService inventoryService;
 
     @GetMapping
-    public List<Inventory> getAllInventory() {
-        return inventoryRepository.findAll();
+    public ResponseEntity<List<InventoryResponse>> getAllInventory() {
+        return ResponseEntity.ok(inventoryService.getAllInventory());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Inventory> getById(@PathVariable UUID id) {
-        return inventoryRepository.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<InventoryResponse> getById(@PathVariable UUID id) {
+        return ResponseEntity.ok(inventoryService.getById(id));
     }
 
+    // Best practice is to use a CreateInventoryRequest DTO here instead of the Inventory entity
     @PostMapping
-    public Inventory createInventory(@RequestBody Inventory inventory) {
-        return inventoryRepository.save(inventory);
+    public ResponseEntity<InventoryResponse> createInventory(@RequestBody Inventory inventoryRequest) {
+        return ResponseEntity.ok(inventoryService.createInventory(inventoryRequest));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Inventory> updateInventory(@PathVariable UUID id, @RequestBody Inventory updatedInventory) {
-        return inventoryRepository.findById(id)
-                .map(existingInventory -> {
-                    updatedInventory.setId(id);
-                    Inventory savedInventory = inventoryRepository.save(updatedInventory);
-                    return ResponseEntity.ok(savedInventory);
-                })
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<InventoryResponse> updateInventory(
+            @PathVariable UUID id,
+            @RequestBody Inventory updatedInventory) {
+        return ResponseEntity.ok(inventoryService.updateInventory(id, updatedInventory));
     }
 }
-
