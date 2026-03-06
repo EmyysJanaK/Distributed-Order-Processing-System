@@ -9,5 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
-    Optional<Inventory> findByProductCode(String productCode);
+    Optional<Inventory> findBySku(String sku);
 }
