@@ -25,7 +25,7 @@ public class InventoryController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<InventoryResponse> getById(@PathVariable UUID id) {
+    public ResponseEntity<InventoryResponse> getById(@PathVariable("id") UUID id) {
         return ResponseEntity.ok(inventoryService.getById(id));
     }
 
@@ -39,7 +39,7 @@ public class InventoryController {
     // Now correctly using the DTO for updates
     @PutMapping("/{id}")
     public ResponseEntity<InventoryResponse> updateInventory(
-            @PathVariable UUID id,
+            @PathVariable("id") UUID id,
             @RequestBody UpdateInventoryRequest request) {
         return ResponseEntity.ok(inventoryService.updateInventory(id, request));
     }
